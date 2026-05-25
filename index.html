@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabellone MSB</title>
+    <title>Tabellone MSB - TEST GITHUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen p-3 sm:p-4 flex flex-col items-center">
@@ -15,101 +15,135 @@
 
     <div class="w-full max-w-xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
         <h1 class="text-2xl sm:text-3xl font-black text-center text-gray-800 tracking-tight mb-1">🚑 DISPONIBILITÀ MSB</h1>
-        <p class="text-gray-500 text-center text-xs sm:text-sm mb-6">Il primo che accetta blocca il turno istantaneamente.</p>
+        <p class="text-gray-500 text-center text-xs sm:text-sm mb-4">🛠️ MODALITÀ TEST (Simulazione Memoria Locale)</p>
 
-        <!-- Simulatore Utente per i test -->
+        <!-- Tabellone Score di Test -->
+        <div class="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200 mb-4 text-center text-xs sm:text-sm">
+            <div>
+                <span class="font-bold text-gray-700">🔴 Score Mario:</span> 
+                <span id="score-mario" class="font-black text-red-600">0</span> punti
+            </div>
+            <div>
+                <span class="font-bold text-gray-700">🟢 Score Luigi:</span> 
+                <span id="score-luigi" class="font-black text-green-600">0</span> punti
+            </div>
+        </div>
+
+        <!-- Simulatore Utente -->
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 flex items-center justify-between text-xs sm:text-sm">
-            <span class="font-bold text-amber-800">👤 Test nei panni di:</span>
+            <span class="font-bold text-amber-800">👤 Clicca nei panni di:</span>
             <select id="selettore-utente" class="rounded-lg border-gray-300 p-1 bg-white font-medium shadow-sm">
-                <option value="1">Mario Rossi</option>
-                <option value="2">Luigi Bianchi</option>
+                <option value="Mario Rossi">Mario Rossi</option>
+                <option value="Luigi Bianchi">Luigi Bianchi</option>
             </select>
         </div>
 
-        <!-- Elenco disponibilità ottimizzato per smartphone -->
         <div id="lista-turni" class="space-y-4">
-            <p class="text-center text-gray-400 py-4 italic">Caricamento bacheca...</p>
+            <!-- I turni compariranno qui -->
         </div>
+        
+        <button onclick="resettaTutto()" class="w-full text-center text-xs text-gray-400 underline mt-8 block hover:text-red-500">
+            Azzera dati e ricomincia il test
+        </button>
     </div>
 
     <script>
-        async function caricaTurni() {
-            try {
-                const response = await fetch('api.php?azione=lista_turni');
-                const turni = await response.json();
-                const container = document.getElementById('lista-turni');
-                container.innerHTML = '';
+        // Inizializziamo i punteggi se non esistono
+        if(!localStorage.getItem('score_mario')) localStorage.setItem('score_mario', '0');
+        if(!localStorage.getItem('score_luigi')) localStorage.setItem('score_luigi', '0');
 
-                if(turni.length === 0) {
-                    container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed font-medium">Nessuna richiesta di turno attiva al momento.</div>';
-                    return;
+        function mostraScore() {
+            document.getElementById('score-mario').innerText = localStorage.getItem('score_mario');
+            document.getElementById('score-luigi').innerText = localStorage.getItem('score_luigi');
+        }
+
+        function caricaTurniTest() {
+            mostraScore();
+            const turni = JSON.parse(localStorage.getItem('database_turni')) || [];
+            const container = document.getElementById('lista-turni');
+            container.innerHTML = '';
+
+            if(turni.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed font-medium">Nessuna richiesta. Vai su responsabile.html per inserirne una!</div>';
+                return;
+            }
+
+            // Ordiniamo i turni dal più recente
+            turni.reverse().forEach(turno => {
+                const card = document.createElement('div');
+                const isPreso = turno.stato === 'preso';
+                
+                card.className = `p-4 sm:p-5 border-2 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${isPreso ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-red-100 shadow-sm'}`;
+
+                let infoTurno = `
+                    <div class="w-full sm:w-auto">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 text-2xs font-extrabold rounded-md ${isPreso ? 'bg-gray-200 text-gray-600' : 'bg-red-600 text-white'}">MSB</span>
+                            ${isPreso ? '<span class="text-xs text-gray-500 font-bold">✓ ASSEGNATO</span>' : '<span class="text-xs text-orange-600 font-extrabold animate-pulse">● RICHIESTO</span>'}
+                        </div>
+                        <h3 class="text-lg font-black text-gray-800 leading-tight">${formattaData(turno.data_turno)}</h3>
+                        <p class="text-gray-600 text-sm mt-0.5">Orario: <span class="font-bold text-gray-800">${turno.orario}</span></p>
+                        ${turno.preso_da ? `<p class="text-xs text-gray-600 font-semibold bg-gray-100 inline-block px-2 py-0.5 rounded-md mt-2">Accettato da: ${turno.preso_da}</p>` : ''}
+                    </div>
+                `;
+
+                let bottone = '';
+                if(!isPreso) {
+                    bottone = `
+                        <button onclick="accettaTurnoTest(${turno.id})" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3 px-8 rounded-xl shadow-md shadow-red-100 transition duration-100 uppercase tracking-wider text-sm text-center">
+                            Accetta
+                        </button>
+                    `;
+                } else {
+                    bottone = `<span class="w-full sm:w-auto text-center text-gray-400 font-bold text-xs uppercase bg-gray-100 p-2.5 rounded-xl border border-gray-200">Chiuso</span>`;
                 }
 
-                turni.forEach(turno => {
-                    const card = document.createElement('div');
-                    const isPreso = turno.stato === 'preso';
-                    
-                    card.className = `p-4 sm:p-5 border-2 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${isPreso ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-red-100 shadow-sm hover:border-red-300'}`;
+                card.innerHTML = infoTurno + bottone;
+                container.appendChild(card);
+            });
+        }
 
-                    let infoTurno = `
-                        <div class="w-full sm:w-auto">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 text-2xs font-extrabold rounded-md ${isPreso ? 'bg-gray-200 text-gray-600' : 'bg-red-600 text-white'}">
-                                    MSB
-                                </span>
-                                ${isPreso ? '<span class="text-xs text-gray-500 font-bold">✓ ASSEGNATO</span>' : '<span class="text-xs text-orange-600 font-extrabold animate-pulse">● RICHIESTO</span>'}
-                            </div>
-                            <h3 class="text-lg font-black text-gray-800 leading-tight">${formattaData(turno.data_turno)}</h3>
-                            <p class="text-gray-600 text-sm mt-0.5">Orario: <span class="font-bold text-gray-800">${turno.orario}</span></p>
-                            ${turno.preso_da ? `<p class="text-xs text-green-700 font-semibold bg-green-50 inline-block px-2 py-0.5 rounded-md mt-2">Coperto da: ${turno.preso_da}</p>` : ''}
-                        </div>
-                    `;
+        function accettaTurnoTest(turnoId) {
+            const operatoreSelezionato = document.getElementById('selettore-utente').value;
+            let turni = JSON.parse(localStorage.getItem('database_turni')) || [];
 
-                    let bottone = '';
-                    if(!isPreso) {
-                        bottone = `
-                            <button onclick="accettaTurno(${turno.id})" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3 px-8 rounded-xl shadow-md shadow-red-100 transition duration-100 uppercase tracking-wider text-sm text-center">
-                                Accetta
-                            </button>
-                        `;
-                    } else {
-                        bottone = `<span class="w-full sm:w-auto text-center text-gray-400 font-bold text-xs uppercase bg-gray-100 p-2.5 rounded-xl border border-gray-200">Chiuso</span>`;
-                    }
+            // Troviamo il turno specifico
+            const index = turni.findIndex(t => t.id === turnoId);
+            
+            if (index !== -1 && turni[index].stato === 'disponibile') {
+                // Blocchiamo il turno
+                turni[index].stato = 'preso';
+                turni[index].preso_da = operatoreSelezionato;
+                localStorage.setItem('database_turni', JSON.stringify(turni));
 
-                    card.innerHTML = infoTurno + bottone;
-                    container.appendChild(card);
-                });
-            } catch (error) {
-                console.error("Errore:", error);
+                // Assegniamo i punti (+10)
+                if(operatoreSelezionato === "Mario Rossi") {
+                    let s = parseInt(localStorage.getItem('score_mario')) + 10;
+                    localStorage.setItem('score_mario', s);
+                } else {
+                    let s = parseInt(localStorage.getItem('score_luigi')) + 10;
+                    localStorage.setItem('score_luigi', s);
+                }
+
+                alert(`Successo! Turno assegnato a ${operatoreSelezionato}. Assegnati +10 Punti Score.`);
+                caricaTurniTest();
+            } else {
+                alert("Errore: Turno non più disponibile!");
             }
         }
 
-        async function accettaTurno(turnoId) {
-            const operatoreId = document.getElementById('selettore-utente').value;
-            try {
-                const response = await fetch('api.php?azione=prenota', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ turno_id: turnoId, operatore_id: operatoreId })
-                });
-                const risultato = await response.json();
-                alert(risultato.message);
-                caricaTurni();
-            } catch (error) {
-                alert("Errore di connessione.");
-            }
-        }
-
-        // Formatta la data inserendo il giorno della settimana (es. "Sabato, 30 Maggio 2026")
         function formattaData(dataString) {
             const d = new Date(dataString);
-            let opzioni = { weekday: 'long', day: 'numeric', month: 'long' };
-            let dataFormattata = d.toLocaleDateString('it-IT', opzioni);
-            // Mettiamo la prima lettera maiuscola per estetica
+            let dataFormattata = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
             return dataFormattata.charAt(0).toUpperCase() + dataFormattata.slice(1);
         }
 
-        caricaTurni();
+        function resettatutto() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        caricaTurniTest();
     </script>
 </body>
 </html>
