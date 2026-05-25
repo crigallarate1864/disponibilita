@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Area Responsabile - Pubblica MSB</title>
+    <title>Area Responsabile - TEST GITHUB</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-3 sm:p-6">
@@ -15,7 +15,7 @@
 
     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-5 sm:p-6 border border-gray-100">
         <h2 class="text-xl sm:text-2xl font-black text-gray-800 text-center tracking-tight mb-1">🚨 RICHIESTA COPERTURA MSB</h2>
-        <p class="text-xs text-gray-500 text-center mb-6 uppercase tracking-wider">Pannello Responsabile Operativo</p>
+        <p class="text-xs text-orange-600 font-bold text-center mb-6 uppercase tracking-wider">🛠️ MODALITÀ TEST GITHUB</p>
         
         <div class="space-y-5">
             <!-- Data -->
@@ -32,9 +32,8 @@
                 </select>
             </div>
 
-            <!-- Bottone Maxi per Mobile -->
-            <button onclick="pubblicaTurno()" id="btn-invia" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold text-base py-4 px-4 rounded-xl shadow-lg shadow-red-200 transition duration-200 active:scale-95 uppercase tracking-wide mt-2">
-                🚀 Pubblica e Invia Mail
+            <button onclick="pubblicaTurnoTest()" id="btn-invia" class="w-full bg-red-600 hover:bg-red-700 text-white font-black text-base py-4 px-4 rounded-xl shadow-lg shadow-red-200 transition duration-200 active:scale-95 uppercase tracking-wide mt-2">
+                🚀 Pubblica (Simula Invia Mail)
             </button>
         </div>
         
@@ -65,7 +64,8 @@
             selectOrario.disabled = false;
         }
 
-        async function pubblicaTurno() {
+        // LOGICA DI SIMULAZIONE PER GITHUB
+        function pubblicaTurnoTest() {
             const btn = document.getElementById('btn-invia');
             const msg = document.getElementById('messaggio');
             const data_turno = document.getElementById('data_turno').value;
@@ -73,32 +73,36 @@
 
             if(!data_turno || !orario) { alert("Compila tutti i campi!"); return; }
 
-            btn.disabled = true; btn.innerText = "⚡ INVIO IN CORSO...";
+            btn.disabled = true; btn.innerText = "⚡ INVIO SIMULATO...";
 
-            try {
-                const response = await fetch('api.php?azione=pubblica', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data_turno, orario, tipologia: 'MSB' })
-                });
-                const risultato = await response.json();
+            // Recuperiamo i turni esistenti salvati nel browser o creiamo un array vuoto
+            let turni = JSON.parse(localStorage.getItem('database_turni')) || [];
+            
+            // Creiamo il nuovo turno
+            const nuovoTurno = {
+                id: Date.now(), // ID univoco temporaneo
+                data_turno: data_turno,
+                orario: orario,
+                stato: 'disponibile',
+                preso_da: null
+            };
 
+            // Lo salviamo nella memoria locale del browser
+            turni.push(nuovoTurno);
+            localStorage.setItem('database_turni', JSON.stringify(turni));
+
+            // Simuliamo la risposta positiva dopo mezzo secondo
+            setTimeout(() => {
                 msg.classList.remove('hidden');
-                if(risultato.status === 'success') {
-                    msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-green-50 text-green-700 border border-green-200";
-                    msg.innerText = risultato.message;
-                    document.getElementById('data_turno').value = '';
-                    document.getElementById('orario').innerHTML = '<option value="">Seleziona prima la data...</option>';
-                    document.getElementById('orario').disabled = true;
-                } else {
-                    msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-red-50 text-red-700 border border-red-200";
-                    msg.innerText = "Errore durante l'invio.";
-                }
-            } catch (error) {
-                msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-red-50 text-red-700 border border-red-200";
-                msg.innerText = "Errore di connessione.";
-            }
-            btn.disabled = false; btn.innerText = "🚀 Pubblica e Invia Mail";
+                msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-green-50 text-green-700 border border-green-200";
+                msg.innerText = "✓ Turno memorizzato nel browser! [Simulazione: Mail inviata agli operatori]";
+                
+                document.getElementById('data_turno').value = '';
+                document.getElementById('orario').innerHTML = '<option value="">Seleziona prima la data...</option>';
+                document.getElementById('orario').disabled = true;
+                
+                btn.disabled = false; btn.innerText = "🚀 Pubblica (Simula Invia Mail)";
+            }, 600);
         }
     </script>
 </body>
