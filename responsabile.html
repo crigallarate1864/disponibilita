@@ -3,38 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Area Responsabile - Pubblica Turno MSB</title>
+    <title>Area Responsabile - Pubblica MSB</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-4">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-3 sm:p-6">
 
-    <div class="w-full max-w-md bg-white rounded-lg shadow-md p-6 mt-6">
-        <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">🚑 Richiedi Copertura MSB</h2>
-        <p class="text-sm text-gray-500 text-center mb-6">Seleziona la data per vedere gli orari standard disponibili</p>
+    <!-- Logo Associazione -->
+    <div class="mt-4 mb-2">
+        <img src="logo.png" alt="Logo Associazione" class="h-20 object-contain mx-auto">
+    </div>
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-5 sm:p-6 border border-gray-100">
+        <h2 class="text-xl sm:text-2xl font-black text-gray-800 text-center tracking-tight mb-1">🚨 RICHIESTA COPERTURA MSB</h2>
+        <p class="text-xs text-gray-500 text-center mb-6 uppercase tracking-wider">Pannello Responsabile Operativo</p>
         
-        <div class="space-y-4">
+        <div class="space-y-5">
+            <!-- Data -->
             <div>
-                <label class="block text-sm font-medium text-gray-700">Data Turno</label>
-                <input type="date" id="data_turno" onchange="aggiornaFasce Orarie()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">1. Seleziona Data Turno</label>
+                <input type="date" id="data_turno" onchange="aggiornaFasceOrarie()" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-3 text-base border bg-gray-50 font-medium">
             </div>
 
+            <!-- Orario -->
             <div>
-                <label class="block text-sm font-medium text-gray-700">Fascia Oraria Standard</label>
-                <select id="orario" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border" disabled>
-                    <option value="">Prima scegli una data...</option>
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">2. Scegli Fascia Oraria</label>
+                <select id="orario" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-3 text-base border bg-gray-50 font-semibold" disabled>
+                    <option value="">Seleziona prima la data...</option>
                 </select>
             </div>
 
-            <button onclick="pubblicaTurno()" id="btn-invia" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">
-                Pubblica Richiesta e Invia Mail
+            <!-- Bottone Maxi per Mobile -->
+            <button onclick="pubblicaTurno()" id="btn-invia" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold text-base py-4 px-4 rounded-xl shadow-lg shadow-red-200 transition duration-200 active:scale-95 uppercase tracking-wide mt-2">
+                🚀 Pubblica e Invia Mail
             </button>
         </div>
         
-        <div id="messaggio" class="mt-4 text-center font-semibold text-sm hidden"></div>
+        <div id="messaggio" class="mt-4 text-center font-bold text-sm p-3 rounded-xl hidden"></div>
     </div>
 
     <script>
-        // Definiamo gli orari del 118 che mi hai dato
         const orariStandard = {
             feriali: ["06:00 - 14:00", "13:30 - 20:30", "20:30 - 06:00"],
             sabato:  ["06:00 - 14:00", "13:30 - 20:30", "20:00 - 08:00"],
@@ -44,74 +51,54 @@
         function aggiornaFasceOrarie() {
             const dataInput = document.getElementById('data_turno').value;
             const selectOrario = document.getElementById('orario');
-            
             if (!dataInput) return;
 
-            const dataSelezionata = new Date(dataInput);
-            const giornoSettimana = dataSelezionata.getDay(); // 0 = Domenica, 6 = Sabato, 1-5 = Feriali
+            const giornoSettimana = new Date(dataInput).getDay();
+            let opzioni = (giornoSettimana === 0) ? orariStandard.domenica : (giornoSettimana === 6 ? orariStandard.sabato : orariStandard.feriali);
 
-            let opzioni = [];
-            if (giornoSettimana === 0) {
-                opzioni = orariStandard.domenica;
-            } else if (giornoSettimana === 6) {
-                opzioni = orariStandard.sabato;
-            } else {
-                opzioni = orariStandard.feriali;
-            }
-
-            // Svuotiamo e ripopoliamo il menu a tendina
             selectOrario.innerHTML = '';
             opzioni.forEach(ora => {
                 const opt = document.createElement('option');
-                opt.value = ora;
-                opt.innerText = ora;
+                opt.value = ora; opt.innerText = ora;
                 selectOrario.appendChild(opt);
             });
-            
             selectOrario.disabled = false;
         }
 
         async function pubblicaTurno() {
             const btn = document.getElementById('btn-invia');
             const msg = document.getElementById('messaggio');
-            
             const data_turno = document.getElementById('data_turno').value;
             const orario = document.getElementById('orario').value;
 
-            if(!data_turno || !orario) {
-                alert("Compila tutti i campi!");
-                return;
-            }
+            if(!data_turno || !orario) { alert("Compila tutti i campi!"); return; }
 
-            btn.disabled = true;
-            btn.innerText = "Invio in corso...";
+            btn.disabled = true; btn.innerText = "⚡ INVIO IN CORSO...";
 
             try {
                 const response = await fetch('api.php?azione=pubblica', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data_turno, orario, tipologia: 'MSB' }) // Fissato su MSB
+                    body: JSON.stringify({ data_turno, orario, tipologia: 'MSB' })
                 });
                 const risultato = await response.json();
 
+                msg.classList.remove('hidden');
                 if(risultato.status === 'success') {
-                    msg.className = "mt-4 text-center font-semibold text-sm text-green-600";
+                    msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-green-50 text-green-700 border border-green-200";
                     msg.innerText = risultato.message;
                     document.getElementById('data_turno').value = '';
-                    selectOrario.innerHTML = '<option value="">Prima scegli una data...</option>';
-                    selectOrario.disabled = true;
+                    document.getElementById('orario').innerHTML = '<option value="">Seleziona prima la data...</option>';
+                    document.getElementById('orario').disabled = true;
                 } else {
-                    msg.className = "mt-4 text-center font-semibold text-sm text-red-600";
-                    msg.innerText = "Errore durante la pubblicazione.";
+                    msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-red-50 text-red-700 border border-red-200";
+                    msg.innerText = "Errore durante l'invio.";
                 }
             } catch (error) {
-                msg.className = "mt-4 text-center font-semibold text-sm text-red-600";
+                msg.className = "mt-4 text-center font-bold text-sm p-3 rounded-xl bg-red-50 text-red-700 border border-red-200";
                 msg.innerText = "Errore di connessione.";
             }
-
-            msg.classList.remove('hidden');
-            btn.disabled = false;
-            btn.innerText = "Pubblica Richiesta e Invia Mail";
+            btn.disabled = false; btn.innerText = "🚀 Pubblica e Invia Mail";
         }
     </script>
 </body>
