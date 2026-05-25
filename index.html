@@ -3,25 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabellone Disponibilità MSB</title>
+    <title>Tabellone MSB</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen p-4 flex flex-col items-center">
+<body class="bg-gray-100 font-sans min-h-screen p-3 sm:p-4 flex flex-col items-center">
 
-    <div class="w-full max-w-2xl bg-white rounded-lg shadow-md p-6 mt-4">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">🚑 Tabellone Richieste MSB</h1>
-        <p class="text-gray-500 text-center text-sm mb-6">Elenco delle disponibilità richieste. Il primo che accetta ottiene il turno.</p>
+    <!-- Logo Associazione -->
+    <div class="mt-2 mb-2">
+        <img src="logo.png" alt="Logo Associazione" class="h-24 object-contain mx-auto">
+    </div>
 
-        <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-6 flex items-center justify-between">
-            <span class="text-sm font-medium text-yellow-800">Simula Operatore per il Test:</span>
-            <select id="selettore-utente" class="text-sm rounded border-gray-300 p-1">
-                <option value="1">Mario Rossi (ID: 1)</option>
-                <option value="2">Luigi Bianchi (ID: 2)</option>
+    <div class="w-full max-w-xl bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+        <h1 class="text-2xl sm:text-3xl font-black text-center text-gray-800 tracking-tight mb-1">🚑 DISPONIBILITÀ MSB</h1>
+        <p class="text-gray-500 text-center text-xs sm:text-sm mb-6">Il primo che accetta blocca il turno istantaneamente.</p>
+
+        <!-- Simulatore Utente per i test -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6 flex items-center justify-between text-xs sm:text-sm">
+            <span class="font-bold text-amber-800">👤 Test nei panni di:</span>
+            <select id="selettore-utente" class="rounded-lg border-gray-300 p-1 bg-white font-medium shadow-sm">
+                <option value="1">Mario Rossi</option>
+                <option value="2">Luigi Bianchi</option>
             </select>
         </div>
 
+        <!-- Elenco disponibilità ottimizzato per smartphone -->
         <div id="lista-turni" class="space-y-4">
-            <p class="text-center text-gray-500">Caricamento in corso...</p>
+            <p class="text-center text-gray-400 py-4 italic">Caricamento bacheca...</p>
         </div>
     </div>
 
@@ -34,38 +41,39 @@
                 container.innerHTML = '';
 
                 if(turni.length === 0) {
-                    container.innerHTML = '<p class="text-center text-gray-500 py-4">Nessuna richiesta di copertura attiva.</p>';
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8 bg-gray-50 rounded-xl border border-dashed font-medium">Nessuna richiesta di turno attiva al momento.</div>';
                     return;
                 }
 
                 turni.forEach(turno => {
                     const card = document.createElement('div');
-                    // Cambia colore se è già stato preso
-                    card.className = `p-4 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${turno.stato === 'preso' ? 'bg-gray-50 border-gray-200' : 'bg-white border-red-200 shadow-sm'}`;
+                    const isPreso = turno.stato === 'preso';
+                    
+                    card.className = `p-4 sm:p-5 border-2 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${isPreso ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-red-100 shadow-sm hover:border-red-300'}`;
 
                     let infoTurno = `
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 text-xs font-bold rounded ${turno.stato === 'preso' ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-800'}">
+                        <div class="w-full sm:w-auto">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 text-2xs font-extrabold rounded-md ${isPreso ? 'bg-gray-200 text-gray-600' : 'bg-red-600 text-white'}">
                                     MSB
                                 </span>
-                                ${turno.stato === 'preso' ? '<span class="text-xs text-green-600 font-bold">✓ ASSEGNATO</span>' : '<span class="text-xs text-orange-600 font-bold">● APERTO</span>'}
+                                ${isPreso ? '<span class="text-xs text-gray-500 font-bold">✓ ASSEGNATO</span>' : '<span class="text-xs text-orange-600 font-extrabold animate-pulse">● RICHIESTO</span>'}
                             </div>
-                            <h3 class="text-lg font-bold text-gray-800 mt-1">Data: ${formattaData(turno.data_turno)}</h3>
-                            <p class="text-gray-600 text-sm">Fascia Oraria: <strong>${turno.orario}</strong></p>
-                            ${turno.preso_da ? `<p class="text-xs text-gray-500 italic mt-1">Accettato da: ${turno.preso_da}</p>` : ''}
+                            <h3 class="text-lg font-black text-gray-800 leading-tight">${formattaData(turno.data_turno)}</h3>
+                            <p class="text-gray-600 text-sm mt-0.5">Orario: <span class="font-bold text-gray-800">${turno.orario}</span></p>
+                            ${turno.preso_da ? `<p class="text-xs text-green-700 font-semibold bg-green-50 inline-block px-2 py-0.5 rounded-md mt-2">Coperto da: ${turno.preso_da}</p>` : ''}
                         </div>
                     `;
 
                     let bottone = '';
-                    if(turno.stato === 'disponibile') {
+                    if(!isPreso) {
                         bottone = `
-                            <button onclick="accettaTurno(${turno.id})" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded shadow transition duration-150 uppercase tracking-wider text-sm">
+                            <button onclick="accettaTurno(${turno.id})" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black py-3 px-8 rounded-xl shadow-md shadow-red-100 transition duration-100 uppercase tracking-wider text-sm text-center">
                                 Accetta
                             </button>
                         `;
                     } else {
-                        bottone = `<span class="text-gray-400 font-medium text-sm italic p-2">Chiuso</span>`;
+                        bottone = `<span class="w-full sm:w-auto text-center text-gray-400 font-bold text-xs uppercase bg-gray-100 p-2.5 rounded-xl border border-gray-200">Chiuso</span>`;
                     }
 
                     card.innerHTML = infoTurno + bottone;
@@ -78,7 +86,6 @@
 
         async function accettaTurno(turnoId) {
             const operatoreId = document.getElementById('selettore-utente').value;
-
             try {
                 const response = await fetch('api.php?azione=prenota', {
                     method: 'POST',
@@ -86,18 +93,20 @@
                     body: JSON.stringify({ turno_id: turnoId, operatore_id: operatoreId })
                 });
                 const risultato = await response.json();
-
                 alert(risultato.message);
-                caricaTurni(); // Aggiorna la pagina al volo
+                caricaTurni();
             } catch (error) {
-                alert("Errore di connessione durante l'accettazione.");
+                alert("Errore di connessione.");
             }
         }
 
-        // Funzione di utilità per mostrare la data in formato italiano (GG/MM/AAAA)
+        // Formatta la data inserendo il giorno della settimana (es. "Sabato, 30 Maggio 2026")
         function formattaData(dataString) {
             const d = new Date(dataString);
-            return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            let opzioni = { weekday: 'long', day: 'numeric', month: 'long' };
+            let dataFormattata = d.toLocaleDateString('it-IT', opzioni);
+            // Mettiamo la prima lettera maiuscola per estetica
+            return dataFormattata.charAt(0).toUpperCase() + dataFormattata.slice(1);
         }
 
         caricaTurni();
