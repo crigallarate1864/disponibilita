@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Responsabile - Inserimento Turni</title>
+    <!-- Carichiamo la grafica moderna tramite internet -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-md bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">🚑 Richiedi Copertura Turno</h2>
+        
+        <!-- Form di inserimento -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Data Turno</label>
+                <input type="date" id="data_turno" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Fascia Oraria</label>
+                <input type="text" id="orario" placeholder="es. 08:00 - 14:00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipologia Servizio</label>
+                <select id="tipologia" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 p-2 border">
+                    <option value="MSB">MSB (Mezzo Soccorso Base)</option>
+                    <option value="MSAR">MSAR (Mezzo Soccorso Avanzato Avanzato)</option>
+                    <option value="MSA">MSA (Mezzo Soccorso Avanzato)</option>
+                </select>
+            </div>
+
+            <button onclick="pubblicaTurno()" id="btn-invia" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">
+                Pubblica e Invia Mail
+            </button>
+        </div>
+        
+        <div id="messaggio" class="mt-4 text-center font-semibold text-sm hidden"></div>
+    </div>
+
+    <script>
+        async function pubblicaTurno() {
+            const btn = document.getElementById('btn-invia');
+            const msg = document.getElementById('messaggio');
+            
+            // Disabilitiamo il bottone per evitare doppi clic furiosi
+            btn.disabled = true;
+            btn.innerText = "Invio in corso...";
+
+            const dati = {
+                data_turno: document.getElementById('data_turno').value,
+                orario: document.getElementById('orario').value,
+                tipologia: document.getElementById('tipologia').value
+            };
+
+            if(!dati.data_turno || !dati.orario) {
+                alert("Per favore, compila tutti i campi!");
+                btn.disabled = false;
+                btn.innerText = "Pubblica e Invia Mail";
+                return;
+            }
+
+            try {
+                // Inviamo i dati al nostro file api.php
+                const response = await fetch('api.php?azione=pubblica', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dati)
+                });
+                const risultato = await response.json();
+
+                if(risultato.status === 'success') {
+                    msg.className = "mt-4 text-center font-semibold text-sm text-green-600";
+                    msg.innerText = risultato.message;
+                    // Puliamo i campi
+                    document.getElementById('data_turno').value = '';
+                    document.getElementById('orario').value = '';
+                } else {
+                    msg.className = "mt-4 text-center font-semibold text-sm text-red-600";
+                    msg.innerText = "Errore durante la pubblicazione.";
+                }
+            } catch (error) {
+                msg.className = "mt-4 text-center font-semibold text-sm text-red-600";
+                msg.innerText = "Errore di connessione al server.";
+            }
+
+            msg.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerText = "Pubblica e Invia Mail";
+        }
+    </script>
+</body>
+</html>
